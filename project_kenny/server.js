@@ -29,14 +29,6 @@ app.get('/returning', function(req, res) {
 
 ////////////// admin add book go link GET:/admin/book
 app.post('/admin/book', function(req, res) {
-	// Book.find({name: req.params.book_name}, function(err, result){
-	// 	if(err){
-	// 		console.log(err)
-	// 	}
-	// 	else{
-	// 		res.send(result)
-	// 	}
-	// })
 	book_id = req.body.book_id
 	book_name = req.body.book_name
 	author = req.body.author_name
@@ -48,11 +40,6 @@ app.post('/admin/book', function(req, res) {
 		}
 		else{
 			res.send("Add "+book_name+" success")
-			// setTimeout(function(){
-			// 	res.sendFile(__dirname + '/admin.html')
-			// 	console.log("asd")
-			// },1000);
-			
 		}
 	})
 });
@@ -60,9 +47,13 @@ app.post('/admin/book', function(req, res) {
 ///////////////// user call for book list GO GET:/book?number= amount of book user want to call
 app.get('/book', function(req, res) {
 	var query = Book.find({})
-	if(req.param('number')){
-		query.limit(parseInt(req.param('number')))
+	amount = parseInt(req.param('number')) //amount book show
+
+	if(amount){
+		query.limit(amount)
 	}
+
+	//add callback
 	query.exec(function(err, result){
 		if(err){
 			console.log(err)
@@ -72,34 +63,29 @@ app.get('/book', function(req, res) {
 		}
 	})
 
-
-	// Book.find({}, function(err, result){
-	// 	if(err){
-	// 		console.log(err)
-	// 	}
-	// 	else{
-	// 		res.send(result + req.param('number'))
-	// 	}
-	// })
 });
 /////////// go to GET:/booking
 app.post('/booking', function(req, res) {
+
 	bookId = req.body.book_id
 	userId = req.body.user_id
-	Book.findOne({'bookId': bookId}, function(err, bookFind){
+
+	// query book by bookId
+	Book.findOne({'bookId': bookId}, function(err, book){
 		if(err){
-			console.log(err)
+			console.log(err)//can't find bookId
 		}
 		else{
-			if(bookFind){
-				User.findOne({'userId': userId}, function(err, result){
+			if(book){
+				// query user for add book in user booking list
+				User.findOne({'userId': userId}, function(err, user){
 					if(err){
-						console.log(err)
+						console.log(err)//can't find userId
 					}
 					else{
-						result.money += 10;
-						result.book.push(bookFind)
-						result.save(function(err,result){
+						user.money += 10;
+						user.book.push(book)//add book in list book
+						user.save(function(err,result){
 							if(err){
 								res.send(err)
 							}
@@ -123,18 +109,22 @@ app.post('/booking', function(req, res) {
 app.post('/returning', function(req, res) {
 	bookId = req.body.book_id
 	userId = req.body.user_id
-	User.findOne({'userId': userId}, function(err, userFind){
+
+	// qury user
+	User.findOne({'userId': userId}, function(err, user){
 		if(err){
 			console.log(err)
 		}
 		else{
-			var temp = 0
-			for (x in userFind.book) {
-				if (userFind.book[x].bookId == bookId) {
-					userFind.money -= 5;
-					userFind.book.pull(userFind.book[x]);
-					temp = 1
-					userFind.save(function(err,result){
+			var isBookInList = false
+			bookList = user.book
+			for (index in bookList) {
+				if (bookList[index].bookId == bookId) { //find bookId from List
+					user.money -= 5;
+					bookList.splice(index,1)//remove book from list
+					user.book = bookList
+					isBookInList = true
+					user.save(function(err,result){
 						if(err){
 							res.send(err)
 						}
@@ -145,36 +135,14 @@ app.post('/returning', function(req, res) {
 					break;
 				}
 			}
-			if(temp == 0){
+			if(isBookInList){
 				res.send('you dont borrow this book')
 			}
-
-			// User.findOne({'userId': userId}, function(err, result){
-			// 	if(err){
-			// 		console.log(err)
-			// 	}
-			// 	else{
-			// 		result.money += 5;
-			// 		result.book.push(bookFind)
-			// 		result.save(function(err,result){
-			// 			if(err){
-			// 				res.send(err)
-			// 			}
-			// 			else{
-			// 				res.send('ok')
-			// 			}
-			// 		})
-			// 	}
-			// });
 		}
 	});
 
 })
 
-// app.get('/test', function(req, res) {
-// 	res.sendFile(__dirname + '/test.html')
-// 	console.log("test")
-// })
 
 ////////////// add user go GET:/adduser?userId=xxxxxxx
 app.get('/adduser', function(req, res) {
@@ -191,20 +159,6 @@ app.get('/adduser', function(req, res) {
 		}
 	})
 })
-
-// app.post('/api/book', function(req, res) {
-// 	book_name = req.body.book_name
-// 	author = req.body.author
-// 	book = new Book({name: book_name, author: author})
-// 	book.save(function(err, result){
-// 		if(err){
-// 			res.send(err)
-// 		}
-// 		else{
-// 			res.send('ok')
-// 		}
-// 	})
-// })
 
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
