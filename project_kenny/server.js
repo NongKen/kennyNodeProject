@@ -1,21 +1,19 @@
-var express = require('express');
-var app = express();
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
+express = require('express')
+app = express()
+mongoose = require('mongoose');
+
 mongoose.connect('mongodb://localhost/kenny');
+bodyParser = require('body-parser');
+
 app.use(bodyParser.urlencoded({ extended: false }))
 
-var Book = mongoose.model('book', { 
+Book = mongoose.model('book', { 
 	bookId: { type: String, index: { unique: true }},
 	name: String,
 	author: String
 });
-
-var User = mongoose.model('user', { 
-	userId: { type: String, index: { unique: true }},
-	book: [],
-	money: Number
-});
+require('./models/User')
+User = mongoose.model('User')
 
 app.get('/admin/book', function(req, res) {
 	res.sendFile(__dirname + '/admin.html')
@@ -74,6 +72,7 @@ app.post('/booking', function(req, res) {
 	Book.findOne({'bookId': bookId}, function(err, book){
 		if(err){
 			console.log(err)//can't find bookId
+			res.send('error please try again')
 		}
 		else{
 			if(book){
@@ -121,10 +120,10 @@ app.post('/returning', function(req, res) {
 			for (index in bookList) {
 				if (bookList[index].bookId == bookId) { //find bookId from List
 					user.money -= 5;
-					bookList.splice(index,1)//remove book from list
+					bookList.splice(index, 1)//remove book from list
 					user.book = bookList
 					isBookInList = true
-					user.save(function(err,result){
+					user.save(function(err, result){
 						if(err){
 							res.send(err)
 						}
@@ -147,9 +146,9 @@ app.post('/returning', function(req, res) {
 ////////////// add user go GET:/adduser?userId=xxxxxxx
 app.get('/adduser', function(req, res) {
 	userId = req.param('userId')
-	money = 0;
-	book = [];
-	user = new User({userId : userId , book : book , money : money})
+	money = 0
+	book = []
+	user = new User({userId: userId , book: book, money : money})
 	user.save(function(err,result){
 		if(err){
 			res.send(err)
